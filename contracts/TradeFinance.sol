@@ -19,7 +19,7 @@ contract TradeFinance is ERC1155, ERC1155Supply, ERC1155Burnable, AccessControl,
         uint256 amount;
         uint256 dueDate;
         bool settled;
-        string reference;
+        string invoiceReference;
     }
 
     mapping(uint256 => Invoice) private _invoices;
@@ -35,7 +35,7 @@ contract TradeFinance is ERC1155, ERC1155Supply, ERC1155Burnable, AccessControl,
         address indexed payableParty,
         uint256 amount,
         uint256 dueDate,
-        string reference
+        string invoiceRef
     );
     event InvoiceSettled(uint256 indexed invoiceId, address indexed settler);
     event InvoicePartiallySettled(
@@ -51,9 +51,9 @@ contract TradeFinance is ERC1155, ERC1155Supply, ERC1155Burnable, AccessControl,
     event SettlementBlocked(address indexed from, address indexed to);
 
     error InvalidAmount(uint256 amount);
-    error InvoiceSettled(uint256 invoiceId);
+    error InvoiceAlreadySettled(uint256 invoiceId);
     error InvoiceExpired(uint256 invoiceId, uint256 dueDate);
-    error DuplicateReference(string reference);
+    error DuplicateReference(string invoiceRef);
     error InvalidParty(address party);
     error InvoiceNotFound(uint256 invoiceId);
     error PartialSettlementLimit(uint256 remaining, uint256 requested);
@@ -74,20 +74,25 @@ contract TradeFinance is ERC1155, ERC1155Supply, ERC1155Burnable, AccessControl,
         address payableParty,
         uint256 amount,
         uint256 dueDate,
-        string memory reference,
+        string memory invoiceRef,
         uint256 initialSupply
     )
         public
         onlyRole(BANKER_ROLE)
         returns (uint256)
     {
-        require(receivableParty != address(0), InvalidParty(receivableParty));
-        require(payableParty != address(0), InvalidParty(payableParty));
-        require(amount > 0 && amount <= MAX_INVOICE_AMOUNT, InvalidAmount(amount));
-        require(
-            bytes(_referenceToInvoiceId[reference]).length == 0,
-            DuplicateReference(reference)
-        );
+        if (receivableParty == address(0)) {
+            revert InvalidParty(receivableParty);
+        }
+        if (payableParty == address(0)) {
+            revert InvalidParty(payableParty);
+        }
+        if (amount == 0 || amount > MAX_INVOICE_AMOUNT) {
+            revert InvalidAmount(amount);
+        }
+        if (_referenceToInvoiceId[invoiceRef] != 0) {
+            revert DuplicateReference(invoiceRef);
+        }
 
         uint256 invoiceId = _nextInvoiceId++;
 
@@ -97,10 +102,10 @@ contract TradeFinance is ERC1155, ERC1155Supply, ERC1155Burnable, AccessControl,
             amount: amount,
             dueDate: dueDate,
             settled: false,
-            reference: reference
+            invoiceReference: invoiceRef
         });
 
-        _referenceToInvoiceId[reference] = invoiceId;
+        _referenceToInvoiceId[invoiceRef] = invoiceId;
         _partyInvoices[receivableParty].push(invoiceId);
         _partyInvoices[payableParty].push(invoiceId);
 
@@ -114,7 +119,7 @@ contract TradeFinance is ERC1155, ERC1155Supply, ERC1155Burnable, AccessControl,
             payableParty,
             amount,
             dueDate,
-            reference
+            invoiceRef
         );
 
         return invoiceId;
@@ -126,7 +131,9 @@ contract TradeFinance is ERC1155, ERC1155Supply, ERC1155Burnable, AccessControl,
         onlyRole(SETTLEMENT_AGENT_ROLE)
     {
         Invoice storage invoice = _invoices[invoiceId];
-        require(invoice.settled == false, InvoiceSettled(invoiceId));
+        if (invoice.settled) {
+            revert InvoiceAlreadySettled(invoiceId);
+        }
 
         if (block.timestamp > invoice.dueDate) {
             revert InvoiceExpired(invoiceId, invoice.dueDate);
@@ -156,11 +163,17 @@ contract TradeFinance is ERC1155, ERC1155Supply, ERC1155Burnable, AccessControl,
         onlyRole(BANKER_ROLE)
     {
         Invoice storage invoice = _invoices[invoiceId];
-        require(invoice.settled == false, InvoiceSettled(invoiceId));
-        require(factor != address(0), InvalidParty(factor));
+        if (invoice.settled) {
+            revert InvoiceAlreadySettled(invoiceId);
+        }
+        if (factor == address(0)) {
+            revert InvalidParty(factor);
+        }
 
         uint256 currentSupply = supplyOf(invoiceId);
-        require(amount <= currentSupply, InvalidAmount(amount));
+        if (amount > currentSupply) {
+            revert InvalidAmount(amount);
+        }
 
         _safeTransferFrom(invoice.receivableParty, factor, invoiceId, amount, "");
 
@@ -172,8 +185,12 @@ contract TradeFinance is ERC1155, ERC1155Supply, ERC1155Burnable, AccessControl,
         onlyRole(BANKER_ROLE)
     {
         Invoice storage invoice = _invoices[invoiceId];
-        require(invoice.settled == false, InvoiceSettled(invoiceId));
-        require(factor != address(0), InvalidParty(factor));
+        if (invoice.settled) {
+            revert InvoiceAlreadySettled(invoiceId);
+        }
+        if (factor == address(0)) {
+            revert InvalidParty(factor);
+        }
 
         uint256 currentSupply = supplyOf(invoiceId);
         _safeTransferFrom(invoice.receivableParty, factor, invoiceId, currentSupply, "");
@@ -197,12 +214,12 @@ contract TradeFinance is ERC1155, ERC1155Supply, ERC1155Burnable, AccessControl,
         return _partyInvoices[party];
     }
 
-    function getInvoiceByReference(string memory reference)
+    function getInvoiceByReference(string memory invoiceRef)
         public
         view
         returns (uint256)
     {
-        return _referenceToInvoiceId[reference];
+        return _referenceToInvoiceId[invoiceRef];
     }
 
     function supplyOf(uint256 id) public view returns (uint256) {
@@ -230,18 +247,12 @@ contract TradeFinance is ERC1155, ERC1155Supply, ERC1155Burnable, AccessControl,
         return super.supportsInterface(interfaceId);
     }
 
-    function _beforeTokenTransfer(
-        address operator,
+    function _update(
         address from,
         address to,
         uint256[] memory ids,
-        uint256[] memory amounts,
-        bytes memory data
-    )
-        internal
-        override(ERC1155Supply)
-        whenNotPaused()
-    {
-        super._beforeTokenTransfer(operator, from, to, ids, amounts, data);
+        uint256[] memory values
+    ) internal override(ERC1155, ERC1155Supply) whenNotPaused {
+        super._update(from, to, ids, values);
     }
 }

@@ -28,7 +28,7 @@ contract TitleTokenization is ERC721, ERC721URIStorage, ERC721Burnable, AccessCo
     event BuyerQualified(address indexed account, bool indexed qualified);
 
     error NotQualifiedBuyer(address account);
-    error TitleEncumbered(uint256 tokenId);
+    error EncumberedTitle(uint256 tokenId);
     error UnauthorizedCaller(address caller);
     error InvalidPropertyAddress(address propertyAddress);
 
@@ -48,7 +48,9 @@ contract TitleTokenization is ERC721, ERC721URIStorage, ERC721Burnable, AccessCo
         uint256 salePrice,
         string memory jurisdiction
     ) public onlyRole(COMPLIANCE_OFFICER_ROLE) {
-        require(propertyAddress != address(0), InvalidPropertyAddress(propertyAddress));
+        if (propertyAddress == address(0)) {
+            revert InvalidPropertyAddress(propertyAddress);
+        }
 
         _safeMint(to, tokenId);
         _setTokenURI(tokenId, tokenURI_);
@@ -69,10 +71,9 @@ contract TitleTokenization is ERC721, ERC721URIStorage, ERC721Burnable, AccessCo
         address to,
         uint256 tokenId
     ) public {
-        require(
-            _titleDetails[tokenId].isEncumbered == false,
-            TitleEncumbered(tokenId)
-        );
+        if (_titleDetails[tokenId].isEncumbered) {
+            revert EncumberedTitle(tokenId);
+        }
         safeTransferFrom(from, to, tokenId);
         _titleDetails[tokenId].lastSaleTimestamp = block.timestamp;
 

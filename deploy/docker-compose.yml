@@ -1,0 +1,34 @@
+# Optional stack when the JSON-RPC node already runs on the host (e.g. `npx hardhat node`).
+# 1) From repo root: `npx hardhat node`
+# 2) In another shell: `npx hardhat run scripts/deploy.js --network localhost`
+# 3) From deploy/: `docker compose up --build`
+#
+# On Linux, replace host.docker.internal with your bridge IP or add:
+#   extra_hosts:
+#     - "host.docker.internal:host-gateway"
+
+services:
+  backend:
+    build:
+      context: ..
+      dockerfile: deploy/backend.Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      POC_RPC_URL: http://host.docker.internal:8545
+      POC_CHAIN_ID: "31337"
+      POC_DEPLOYMENTS_FILE: /deployments/local.json
+      POC_SIGNER_PRIVATE_KEY: ${POC_SIGNER_PRIVATE_KEY:-0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80}
+    volumes:
+      - ../deployments:/deployments:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  frontend:
+    build:
+      context: ..
+      dockerfile: deploy/frontend.Dockerfile
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend

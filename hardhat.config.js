@@ -1,7 +1,9 @@
-import "@nomicfoundation/hardhat-toolbox";
+import { defineConfig } from "hardhat/config";
+import hardhatToolboxMochaEthers from "@nomicfoundation/hardhat-toolbox-mocha-ethers";
 import "dotenv/config";
 
-const config = {
+export default defineConfig({
+  plugins: [hardhatToolboxMochaEthers],
   solidity: {
     version: "0.8.20",
     settings: {
@@ -13,15 +15,13 @@ const config = {
   },
   networks: {
     hardhat: {
+      type: "edr-simulated",
       chainId: 1337,
     },
     localhost: {
-      url: "http://127.0.0.1:8545",
+      type: "http",
+      url: process.env.RPC_URL ?? "http://127.0.0.1:8545",
     },
-  },
-  gasReporter: {
-    enabled: process.env.REPORT_GAS === "true",
-    currency: "USD",
   },
   paths: {
     sources: "./contracts",
@@ -29,6 +29,4 @@ const config = {
     cache: "./cache",
     artifacts: "./artifacts",
   },
-};
-
-export default config;
+});

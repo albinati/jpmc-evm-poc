@@ -1,16 +1,24 @@
 {
   "name": "jpmc-evm-poc",
   "version": "1.0.0",
-  "description": "Enterprise EVM Proof of Concept - Asset Tokenization and Compliant Treasury",
-  "main": "index.js",
+  "description": "Enterprise EVM Proof of Concept - Kinexys-style orchestration, asset tokenization, compliant treasury",
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
     "compile": "hardhat compile",
-    "test": "hardhat test"
+    "test": "hardhat test",
+    "deploy:local": "hardhat run scripts/deploy.js --network localhost",
+    "verify": "npm run compile && npm test",
+    "e2e:local-chain": "bash scripts/e2e-local-chain.sh"
   },
   "dependencies": {
-    "@openzeppelin/contracts": "^5.0.0"
+    "@openzeppelin/contracts": "5.0.0"
   },
   "devDependencies": {
-    "hardhat": "^2.19.0"
+    "@nomicfoundation/hardhat-toolbox-mocha-ethers": "^3.0.4",
+    "dotenv": "^17.4.2",
+    "hardhat": "^3.4.0"
   }
 }

@@ -16,7 +16,7 @@ contract CorporateTreasury is ERC20, ERC20Burnable, ERC20Pausable, AccessControl
     mapping(address => uint256) private _frozenUntil;
 
     uint256 public constant GRACE_PERIOD = 45 days;
-    uint256 public constant INITIAL_SUPPLY = 1_000_000_000 * 10 ** decimals();
+    uint256 public constant INITIAL_SUPPLY = 1_000_000_000 * 10 ** 18;
 
     event Blacklisted(address indexed account, bool indexed status);
     event FundsFrozen(address indexed account, uint256 indexed until);
@@ -40,21 +40,6 @@ contract CorporateTreasury is ERC20, ERC20Burnable, ERC20Pausable, AccessControl
         _mint(initialOwner, INITIAL_SUPPLY);
     }
 
-    modifier notBlacklisted(address account) {
-        require(!_blacklist[account], BlacklistedAccount(account));
-        _;
-    }
-
-    modifier notFrozen(address account) {
-        if (_frozenUntil[account] != 0) {
-            require(
-                block.timestamp >= _frozenUntil[account],
-                AccountFrozen(account, _frozenUntil[account])
-            );
-        }
-        _;
-    }
-
     function mint(address to, uint256 amount)
         public
         onlyRole(TREASURY_OPERATOR_ROLE)
@@ -62,48 +47,27 @@ contract CorporateTreasury is ERC20, ERC20Burnable, ERC20Pausable, AccessControl
         _mint(to, amount);
     }
 
-    function burn(uint256 amount)
-        public
-        override
-        notBlacklisted(_msgSender())
-        notFrozen(_msgSender())
+    function _update(address from, address to, uint256 value)
+        internal
+        override(ERC20, ERC20Pausable)
     {
-        super.burn(amount);
-    }
-
-    function burnFrom(address account, uint256 amount)
-        public
-        override
-        notBlacklisted(account)
-        notFrozen(account)
-    {
-        super.burnFrom(account, amount);
-    }
-
-    function transfer(address to, uint256 amount)
-        public
-        override
-        notBlacklisted(_msgSender())
-        notFrozen(_msgSender())
-        notBlacklisted(to)
-        notFrozen(to)
-        whenNotPaused()
-        returns (bool)
-    {
-        return super.transfer(to, amount);
-    }
-
-    function transferFrom(address from, address to, uint256 amount)
-        public
-        override
-        notBlacklisted(from)
-        notFrozen(from)
-        notBlacklisted(to)
-        notFrozen(to)
-        whenNotPaused()
-        returns (bool)
-    {
-        return super.transferFrom(from, to, amount);
+        if (from != address(0)) {
+            if (_blacklist[from]) {
+                revert BlacklistedAccount(from);
+            }
+            if (_frozenUntil[from] != 0 && block.timestamp < _frozenUntil[from]) {
+                revert AccountFrozen(from, _frozenUntil[from]);
+            }
+        }
+        if (to != address(0)) {
+            if (_blacklist[to]) {
+                revert BlacklistedAccount(to);
+            }
+            if (_frozenUntil[to] != 0 && block.timestamp < _frozenUntil[to]) {
+                revert AccountFrozen(to, _frozenUntil[to]);
+            }
+        }
+        super._update(from, to, value);
     }
 
     function pause()
@@ -166,13 +130,15 @@ contract CorporateTreasury is ERC20, ERC20Burnable, ERC20Pausable, AccessControl
         address from,
         address to,
         uint256 amount,
-        bytes calldata complianceData
+        bytes calldata /* compliancePayload — reserved for screening / case refs */
     )
         public
         onlyRole(COMPLIANCE_ROLE)
         returns (bool)
     {
-        require(amount > 0, ZeroAmount());
+        if (amount == 0) {
+            revert ZeroAmount();
+        }
 
         if (_blacklist[from]) {
             revert BlacklistedAccount(from);
@@ -194,12 +160,7 @@ contract CorporateTreasury is ERC20, ERC20Burnable, ERC20Pausable, AccessControl
         _pause();
     }
 
-    function supportsInterface(bytes4 interfaceId)
-        public
-        view
-        override(AccessControl, ERC20, ERC20Pausable)
-        returns (bool)
-    {
+    function supportsInterface(bytes4 interfaceId) public view override(AccessControl) returns (bool) {
         return super.supportsInterface(interfaceId);
     }
 }

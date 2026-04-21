@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Smart contracts
+        run: |
+          npm ci
+          npm run compile
+          npm test
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+
+      - name: Backend
+        working-directory: backend
+        run: |
+          chmod +x mvnw
+          ./mvnw -B verify
+
+      - name: Frontend
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run build

@@ -1,0 +1,62 @@
+# Example Kubernetes manifests for the Spring Boot orchestration API.
+# Create a ConfigMap or Secret that mounts `deployments.json` at the path
+# referenced by POC_DEPLOYMENTS_FILE (see backend application.yml).
+#
+#   kubectl create configmap evm-deployments --from-file=deployments.json=./deployments/local.json
+#
+# Then wire the volume in the Deployment below (not fully expanded — adapt to your cluster).
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: evm-orchestration-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: evm-orchestration-api
+  template:
+    metadata:
+      labels:
+        app: evm-orchestration-api
+    spec:
+      containers:
+        - name: api
+          image: your-registry/evm-orchestration-api:1.0.0
+          ports:
+            - containerPort: 8080
+          env:
+            - name: POC_RPC_URL
+              value: "http://your-consortium-rpc:8545"
+            - name: POC_CHAIN_ID
+              value: "31337"
+            - name: POC_DEPLOYMENTS_FILE
+              value: "/config/deployments.json"
+            - name: POC_SIGNER_PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: evm-poc-signer
+                  key: privateKey
+          volumeMounts:
+            - name: deployments
+              mountPath: /config
+              readOnly: true
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+      volumes:
+        - name: deployments
+          configMap:
+            name: evm-deployments
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: evm-orchestration-api
+spec:
+  selector:
+    app: evm-orchestration-api
+  ports:
+    - port: 8080
+      targetPort: 8080

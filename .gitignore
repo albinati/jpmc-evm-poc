@@ -4,4 +4,9 @@ artifacts/
 typechain/
 typechain-types/
 .env
+.env.local
 coverage/
+deployments/local.json
+hardhat-node.log
+backend/target/
+frontend/dist/

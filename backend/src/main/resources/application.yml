@@ -1,0 +1,15 @@
+spring:
+  application:
+    name: evm-orchestration-api
+
+poc:
+  rpc-url: ${POC_RPC_URL:http://127.0.0.1:8545}
+  chain-id: ${POC_CHAIN_ID:31337}
+  deployments-file: ${POC_DEPLOYMENTS_FILE:../deployments/local.json}
+  signer-private-key: ${POC_SIGNER_PRIVATE_KEY:}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

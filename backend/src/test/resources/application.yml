@@ -1,0 +1,5 @@
+poc:
+  rpc-url: http://127.0.0.1:59999
+  chain-id: 31337
+  deployments-file: classpath:deployments/test-local.json
+  signer-private-key: ""
