@@ -501,3 +501,148 @@ button:disabled:hover,
     display: none;
   }
 }
+
+/* ---------- additions for the multi-panel POC ---------- */
+
+/* Make state-rail nodes clickable when used as nav (App.tsx) without breaking
+   their use as a passive progress indicator on the facility panel. */
+.state-rail nav.state-rail .state-rail__node,
+nav.state-rail > .state-rail__node {
+  cursor: pointer;
+}
+
+button.state-rail__node {
+  background: transparent;
+  border: 1px solid #2d3a4d;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+}
+
+.row--stack {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.inp--wide {
+  flex: 1 1 18rem;
+}
+
+.receipt {
+  margin-top: 1rem;
+  border: 1px solid #2d3a4d;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  background: #11192a;
+  font-size: 0.85rem;
+}
+
+.receipt__head {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.5rem;
+}
+
+.receipt__badge {
+  display: inline-block;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.receipt__badge--ok {
+  background: #143824;
+  color: #6ad48b;
+  border: 1px solid #2f6c44;
+}
+
+.receipt__badge--bad {
+  background: #3b1c1c;
+  color: #e09696;
+  border: 1px solid #8a2f2f;
+}
+
+.receipt__hash {
+  flex: 1;
+  font-family: ui-monospace, monospace;
+  color: #9aa0a6;
+  word-break: break-all;
+}
+
+.grid--receipt dt {
+  font-size: 0.75rem;
+  color: #9aa0a6;
+}
+
+.receipt__events {
+  margin-top: 0.6rem;
+  border-top: 1px solid #2d3a4d;
+  padding-top: 0.6rem;
+}
+
+.receipt__events-title {
+  margin: 0 0 0.4rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #c4c7c5;
+}
+
+.receipt__event-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.4rem;
+}
+
+.receipt__event {
+  background: #0f1626;
+  border: 1px solid #1f2a3a;
+  border-radius: 6px;
+  padding: 0.45rem 0.6rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.8rem;
+  align-items: center;
+}
+
+.receipt__event-name {
+  font-weight: 600;
+  color: #e8eaed;
+}
+
+.receipt__event-contract {
+  font-size: 0.7rem;
+  color: #9aa0a6;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.receipt__event-arg {
+  font-size: 0.78rem;
+  color: #c4c7c5;
+}
+
+.receipt__event-arg em {
+  color: #9aa0a6;
+  font-style: normal;
+}
+
+.state-banner--good {
+  border-color: #2f6c44;
+  background: #143824;
+}
+
+.state-banner--warn {
+  border-color: #8a6f2f;
+  background: #3b321c;
+}
+
+.state-banner--bad {
+  border-color: #8a2f2f;
+  background: #3b1c1c;
+}
