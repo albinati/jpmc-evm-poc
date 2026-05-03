@@ -222,4 +222,97 @@ describe("TradeFinance", function () {
         )
     ).to.be.revertedWithCustomError(trade, "EnforcedPause");
   });
+
+  it("extendDueDate moves an unsettled invoice's due date further into the future", async function () {
+    const { networkHelpers } = await hre.network.connect();
+    const { trade, banker, receivableParty, payableParty } = await networkHelpers.loadFixture(
+      deployTradeFixture
+    );
+
+    const due = Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60;
+    const newDue = due + 14 * 24 * 60 * 60;
+
+    await trade
+      .connect(banker)
+      .createInvoice(
+        receivableParty.address,
+        payableParty.address,
+        100000,
+        due,
+        "INV-EXTEND-001",
+        1
+      );
+
+    await expect(trade.connect(banker).extendDueDate(1, newDue))
+      .to.emit(trade, "InvoiceDueDateExtended")
+      .withArgs(1n, BigInt(due), BigInt(newDue), banker.address);
+
+    const inv = await trade.getInvoice(1);
+    expect(inv.dueDate).to.equal(BigInt(newDue));
+  });
+
+  it("extendDueDate reverts on past, shrinking, settled, or unauthorized callers", async function () {
+    const { networkHelpers } = await hre.network.connect();
+    const { trade, banker, settlementAgent, receivableParty, payableParty } =
+      await networkHelpers.loadFixture(deployTradeFixture);
+
+    const due = Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60;
+
+    await trade
+      .connect(banker)
+      .createInvoice(
+        receivableParty.address,
+        payableParty.address,
+        100000,
+        due,
+        "INV-EXTEND-NEG-001",
+        1
+      );
+
+    await expect(
+      trade.connect(banker).extendDueDate(1, Math.floor(Date.now() / 1000) - 1)
+    ).to.be.revertedWithCustomError(trade, "DueDateNotInFuture");
+
+    await expect(
+      trade.connect(banker).extendDueDate(1, due - 1)
+    ).to.be.revertedWithCustomError(trade, "DueDateNotAnExtension");
+
+    await expect(
+      trade.connect(receivableParty).extendDueDate(1, due + 100)
+    ).to.be.revertedWithCustomError(trade, "AccessControlUnauthorizedAccount");
+
+    await expect(
+      trade.connect(banker).extendDueDate(99, due + 100)
+    ).to.be.revertedWithCustomError(trade, "InvoiceNotFound");
+
+    await trade
+      .connect(receivableParty)
+      .safeTransferFrom(receivableParty.address, settlementAgent.address, 1, 1, "0x");
+    await trade.connect(settlementAgent).settleInvoice(1, 100000);
+
+    await expect(
+      trade.connect(banker).extendDueDate(1, due + 365 * 24 * 60 * 60)
+    ).to.be.revertedWithCustomError(trade, "InvoiceAlreadySettled");
+  });
+
+  it("getInvoiceParts returns flat tuple matching getInvoice", async function () {
+    const { networkHelpers } = await hre.network.connect();
+    const { trade, banker, receivableParty, payableParty } = await networkHelpers.loadFixture(
+      deployTradeFixture
+    );
+
+    const due = Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60;
+    await trade
+      .connect(banker)
+      .createInvoice(receivableParty.address, payableParty.address, 100000, due, "INV-PARTS-001", 7);
+
+    const parts = await trade.getInvoiceParts(1);
+    expect(parts[0]).to.equal(receivableParty.address);
+    expect(parts[1]).to.equal(payableParty.address);
+    expect(parts[2]).to.equal(100000n);
+    expect(parts[3]).to.equal(BigInt(due));
+    expect(parts[4]).to.equal(false);
+    expect(parts[5]).to.equal(7n);
+    expect(parts[6]).to.equal("INV-PARTS-001");
+  });
 });

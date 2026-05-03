@@ -13,19 +13,21 @@ export declare namespace TitleTokenization {
     }
 
   export interface TitleTokenizationInterface extends Interface {
-    getFunction(nameOrSignature: "AUDITOR_ROLE" | "COMPLIANCE_OFFICER_ROLE" | "DEFAULT_ADMIN_ROLE" | "approve" | "balanceOf" | "burn" | "getApproved" | "getRoleAdmin" | "getTitleDetail" | "grantRole" | "hasRole" | "isApprovedForAll" | "isQualifiedBuyer" | "mintTitle" | "name" | "owner" | "ownerOf" | "renounceOwnership" | "renounceRole" | "revokeRole" | "safeTransferFrom(address,address,uint256)" | "safeTransferFrom(address,address,uint256,bytes)" | "safeTransferTitle" | "setApprovalForAll" | "setEncumbrance" | "setQualifiedBuyer" | "supportsInterface" | "symbol" | "tokenURI" | "transferFrom" | "transferOwnership"): FunctionFragment;
+    getFunction(nameOrSignature: "AUDITOR_ROLE" | "COMPLIANCE_OFFICER_ROLE" | "DEFAULT_ADMIN_ROLE" | "TRANSFER_AGENT_ROLE" | "approve" | "balanceOf" | "burn" | "getApproved" | "getRoleAdmin" | "getTitleDetail" | "getTitleDetailParts" | "grantRole" | "hasRole" | "isApprovedForAll" | "isQualifiedBuyer" | "mintTitle" | "name" | "owner" | "ownerOf" | "renounceOwnership" | "renounceRole" | "revokeRole" | "safeTransferFrom(address,address,uint256)" | "safeTransferFrom(address,address,uint256,bytes)" | "safeTransferTitle" | "setApprovalForAll" | "setEncumbrance" | "setQualifiedBuyer" | "supportsInterface" | "symbol" | "tokenURI" | "transferFrom" | "transferOwnership" | "updateTokenURI"): FunctionFragment;
 
-    getEvent(nameOrSignatureOrTopic: "Approval" | "ApprovalForAll" | "BatchMetadataUpdate" | "BuyerQualified" | "MetadataUpdate" | "OwnershipTransferred" | "RoleAdminChanged" | "RoleGranted" | "RoleRevoked" | "TitleEncumbered" | "TitleMinted" | "TitleTransferred" | "Transfer"): EventFragment;
+    getEvent(nameOrSignatureOrTopic: "Approval" | "ApprovalForAll" | "BatchMetadataUpdate" | "BuyerQualified" | "MetadataUpdate" | "OwnershipTransferred" | "RoleAdminChanged" | "RoleGranted" | "RoleRevoked" | "TitleEncumbered" | "TitleMinted" | "TitleTransferred" | "TokenURIUpdated" | "Transfer"): EventFragment;
 
     encodeFunctionData(functionFragment: 'AUDITOR_ROLE', values?: undefined): string;
 encodeFunctionData(functionFragment: 'COMPLIANCE_OFFICER_ROLE', values?: undefined): string;
 encodeFunctionData(functionFragment: 'DEFAULT_ADMIN_ROLE', values?: undefined): string;
+encodeFunctionData(functionFragment: 'TRANSFER_AGENT_ROLE', values?: undefined): string;
 encodeFunctionData(functionFragment: 'approve', values: [AddressLike, BigNumberish]): string;
 encodeFunctionData(functionFragment: 'balanceOf', values: [AddressLike]): string;
 encodeFunctionData(functionFragment: 'burn', values: [BigNumberish]): string;
 encodeFunctionData(functionFragment: 'getApproved', values: [BigNumberish]): string;
 encodeFunctionData(functionFragment: 'getRoleAdmin', values: [BytesLike]): string;
 encodeFunctionData(functionFragment: 'getTitleDetail', values: [BigNumberish]): string;
+encodeFunctionData(functionFragment: 'getTitleDetailParts', values: [BigNumberish]): string;
 encodeFunctionData(functionFragment: 'grantRole', values: [BytesLike, AddressLike]): string;
 encodeFunctionData(functionFragment: 'hasRole', values: [BytesLike, AddressLike]): string;
 encodeFunctionData(functionFragment: 'isApprovedForAll', values: [AddressLike, AddressLike]): string;
@@ -48,16 +50,19 @@ encodeFunctionData(functionFragment: 'symbol', values?: undefined): string;
 encodeFunctionData(functionFragment: 'tokenURI', values: [BigNumberish]): string;
 encodeFunctionData(functionFragment: 'transferFrom', values: [AddressLike, AddressLike, BigNumberish]): string;
 encodeFunctionData(functionFragment: 'transferOwnership', values: [AddressLike]): string;
+encodeFunctionData(functionFragment: 'updateTokenURI', values: [BigNumberish, string]): string;
 
     decodeFunctionResult(functionFragment: 'AUDITOR_ROLE', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'COMPLIANCE_OFFICER_ROLE', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'DEFAULT_ADMIN_ROLE', data: BytesLike): Result;
+decodeFunctionResult(functionFragment: 'TRANSFER_AGENT_ROLE', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'approve', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'balanceOf', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'burn', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'getApproved', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'getRoleAdmin', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'getTitleDetail', data: BytesLike): Result;
+decodeFunctionResult(functionFragment: 'getTitleDetailParts', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'grantRole', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'hasRole', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'isApprovedForAll', data: BytesLike): Result;
@@ -80,6 +85,7 @@ decodeFunctionResult(functionFragment: 'symbol', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'tokenURI', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'transferFrom', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'transferOwnership', data: BytesLike): Result;
+decodeFunctionResult(functionFragment: 'updateTokenURI', data: BytesLike): Result;
   }
 
   
@@ -227,6 +233,18 @@ decodeFunctionResult(functionFragment: 'transferOwnership', data: BytesLike): Re
 
   
 
+    export namespace TokenURIUpdatedEvent {
+      export type InputTuple = [tokenId: BigNumberish, newURI: string, updatedBy: AddressLike];
+      export type OutputTuple = [tokenId: bigint, newURI: string, updatedBy: string];
+      export interface OutputObject {tokenId: bigint, newURI: string, updatedBy: string };
+      export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>
+      export type Filter = TypedDeferredTopicFilter<Event>
+      export type Log = TypedEventLog<Event>
+      export type LogDescription = TypedLogDescription<Event>
+    }
+
+  
+
     export namespace TransferEvent {
       export type InputTuple = [from: AddressLike, to: AddressLike, tokenId: BigNumberish];
       export type OutputTuple = [from: string, to: string, tokenId: bigint];
@@ -297,6 +315,14 @@ decodeFunctionResult(functionFragment: 'transferOwnership', data: BytesLike): Re
     
 
     
+    TRANSFER_AGENT_ROLE: TypedContractMethod<
+      [],
+      [string],
+      'view'
+    >
+    
+
+    
     approve: TypedContractMethod<
       [to: AddressLike, tokenId: BigNumberish, ],
       [void],
@@ -340,6 +366,14 @@ decodeFunctionResult(functionFragment: 'transferOwnership', data: BytesLike): Re
     getTitleDetail: TypedContractMethod<
       [tokenId: BigNumberish, ],
       [TitleTokenization.TitleDetailStructOutput],
+      'view'
+    >
+    
+
+    
+    getTitleDetailParts: TypedContractMethod<
+      [tokenId: BigNumberish, ],
+      [[string, string, string, bigint, bigint, boolean, string] & {owner: string, uri: string, propertyAddress: string, lastSalePrice: bigint, lastSaleTimestamp: bigint, isEncumbered: boolean, jurisdiction: string }],
       'view'
     >
     
@@ -520,6 +554,14 @@ decodeFunctionResult(functionFragment: 'transferOwnership', data: BytesLike): Re
     >
     
 
+    
+    updateTokenURI: TypedContractMethod<
+      [tokenId: BigNumberish, newURI: string, ],
+      [void],
+      'nonpayable'
+    >
+    
+
 
     getFunction<T extends ContractMethod = ContractMethod>(key: string | FunctionFragment): T;
 
@@ -534,6 +576,11 @@ getFunction(nameOrSignature: 'COMPLIANCE_OFFICER_ROLE'): TypedContractMethod<
       'view'
     >;
 getFunction(nameOrSignature: 'DEFAULT_ADMIN_ROLE'): TypedContractMethod<
+      [],
+      [string],
+      'view'
+    >;
+getFunction(nameOrSignature: 'TRANSFER_AGENT_ROLE'): TypedContractMethod<
       [],
       [string],
       'view'
@@ -566,6 +613,11 @@ getFunction(nameOrSignature: 'getRoleAdmin'): TypedContractMethod<
 getFunction(nameOrSignature: 'getTitleDetail'): TypedContractMethod<
       [tokenId: BigNumberish, ],
       [TitleTokenization.TitleDetailStructOutput],
+      'view'
+    >;
+getFunction(nameOrSignature: 'getTitleDetailParts'): TypedContractMethod<
+      [tokenId: BigNumberish, ],
+      [[string, string, string, bigint, bigint, boolean, string] & {owner: string, uri: string, propertyAddress: string, lastSalePrice: bigint, lastSaleTimestamp: bigint, isEncumbered: boolean, jurisdiction: string }],
       'view'
     >;
 getFunction(nameOrSignature: 'grantRole'): TypedContractMethod<
@@ -678,6 +730,11 @@ getFunction(nameOrSignature: 'transferOwnership'): TypedContractMethod<
       [void],
       'nonpayable'
     >;
+getFunction(nameOrSignature: 'updateTokenURI'): TypedContractMethod<
+      [tokenId: BigNumberish, newURI: string, ],
+      [void],
+      'nonpayable'
+    >;
 
     getEvent(key: 'Approval'): TypedContractEvent<ApprovalEvent.InputTuple, ApprovalEvent.OutputTuple, ApprovalEvent.OutputObject>;
 getEvent(key: 'ApprovalForAll'): TypedContractEvent<ApprovalForAllEvent.InputTuple, ApprovalForAllEvent.OutputTuple, ApprovalForAllEvent.OutputObject>;
@@ -691,6 +748,7 @@ getEvent(key: 'RoleRevoked'): TypedContractEvent<RoleRevokedEvent.InputTuple, Ro
 getEvent(key: 'TitleEncumbered'): TypedContractEvent<TitleEncumberedEvent.InputTuple, TitleEncumberedEvent.OutputTuple, TitleEncumberedEvent.OutputObject>;
 getEvent(key: 'TitleMinted'): TypedContractEvent<TitleMintedEvent.InputTuple, TitleMintedEvent.OutputTuple, TitleMintedEvent.OutputObject>;
 getEvent(key: 'TitleTransferred'): TypedContractEvent<TitleTransferredEvent.InputTuple, TitleTransferredEvent.OutputTuple, TitleTransferredEvent.OutputObject>;
+getEvent(key: 'TokenURIUpdated'): TypedContractEvent<TokenURIUpdatedEvent.InputTuple, TokenURIUpdatedEvent.OutputTuple, TokenURIUpdatedEvent.OutputObject>;
 getEvent(key: 'Transfer'): TypedContractEvent<TransferEvent.InputTuple, TransferEvent.OutputTuple, TransferEvent.OutputObject>;
 
     filters: {
@@ -741,6 +799,10 @@ getEvent(key: 'Transfer'): TypedContractEvent<TransferEvent.InputTuple, Transfer
 
       'TitleTransferred(uint256,address,address)': TypedContractEvent<TitleTransferredEvent.InputTuple, TitleTransferredEvent.OutputTuple, TitleTransferredEvent.OutputObject>;
       TitleTransferred: TypedContractEvent<TitleTransferredEvent.InputTuple, TitleTransferredEvent.OutputTuple, TitleTransferredEvent.OutputObject>;
+    
+
+      'TokenURIUpdated(uint256,string,address)': TypedContractEvent<TokenURIUpdatedEvent.InputTuple, TokenURIUpdatedEvent.OutputTuple, TokenURIUpdatedEvent.OutputObject>;
+      TokenURIUpdated: TypedContractEvent<TokenURIUpdatedEvent.InputTuple, TokenURIUpdatedEvent.OutputTuple, TokenURIUpdatedEvent.OutputObject>;
     
 
       'Transfer(address,address,uint256)': TypedContractEvent<TransferEvent.InputTuple, TransferEvent.OutputTuple, TransferEvent.OutputObject>;

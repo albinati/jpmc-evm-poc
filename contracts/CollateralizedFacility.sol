@@ -56,11 +56,18 @@ contract CollateralizedFacility is AccessControl, ReentrancyGuard, ERC721Holder 
         uint256 titleTokenIdTransferred
     );
     event FacilityReleasedNormally(uint256 indexed facilityId, address indexed borrower);
+    event CashToppedUp(
+        uint256 indexed facilityId,
+        address indexed borrower,
+        uint256 amount,
+        uint256 newLockedCash
+    );
 
     error InvalidState(uint256 facilityId, FacilityState current, string message);
     error NotBorrower(uint256 facilityId, address caller);
     error ZeroAddress();
     error TitleTokenMismatch(uint256 facilityId, uint256 provided, uint256 expected);
+    error ZeroAmount();
 
     constructor(address admin, IERC20 cashToken_, IERC721 titleToken_) {
         if (admin == address(0)) revert ZeroAddress();
@@ -190,6 +197,20 @@ contract CollateralizedFacility is AccessControl, ReentrancyGuard, ERC721Holder 
         }
 
         emit LiquidationFinalized(facilityId, recovery, cashOut, tid);
+    }
+
+    /// @notice Borrower amends an Active facility by posting more cash collateral.
+    function topUpCash(uint256 facilityId, uint256 amount) external nonReentrant {
+        if (amount == 0) revert ZeroAmount();
+        Facility storage f = _facilities[facilityId];
+        if (f.borrower != msg.sender) revert NotBorrower(facilityId, msg.sender);
+        if (f.state != FacilityState.Active) {
+            revert InvalidState(facilityId, f.state, "not Active");
+        }
+
+        cashToken.safeTransferFrom(msg.sender, address(this), amount);
+        f.lockedCash += amount;
+        emit CashToppedUp(facilityId, msg.sender, amount, f.lockedCash);
     }
 
     /// @notice Obligation satisfied: return collateral to borrower.

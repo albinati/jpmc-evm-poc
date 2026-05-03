@@ -149,4 +149,80 @@ describe("CollateralizedFacility", function () {
       facility.connect(compliance).finalizeLiquidation(id, borrower.address)
     ).to.be.revertedWithCustomError(facility, "AccessControlUnauthorizedAccount");
   });
+
+  it("topUpCash adds cash to an Active facility and emits CashToppedUp", async function () {
+    const { networkHelpers } = await hre.network.connect();
+    const { ethers, treasury, title, facility, banker, borrower, cashAmount } =
+      await networkHelpers.loadFixture(deployAllFixture);
+
+    await facility.connect(banker).createFacility(borrower.address, 0);
+    const id = 1n;
+    await treasury.connect(borrower).approve(facility.target, cashAmount);
+    await title.connect(borrower).setApprovalForAll(facility.target, true);
+    await facility.connect(borrower).fundAndEncumber(id, cashAmount / 2n, 42n);
+
+    const topUp = cashAmount / 4n;
+    await treasury.connect(borrower).approve(facility.target, topUp);
+
+    await expect(facility.connect(borrower).topUpCash(id, topUp))
+      .to.emit(facility, "CashToppedUp")
+      .withArgs(id, borrower.address, topUp, cashAmount / 2n + topUp);
+
+    const f = await facility.getFacility(id);
+    expect(f.lockedCash).to.equal(cashAmount / 2n + topUp);
+  });
+
+  it("topUpCash reverts when not borrower, when not Active, and on zero amount", async function () {
+    const { networkHelpers } = await hre.network.connect();
+    const { ethers, treasury, title, facility, banker, compliance, borrower, recovery, cashAmount } =
+      await networkHelpers.loadFixture(deployAllFixture);
+
+    await facility.connect(banker).createFacility(borrower.address, 0);
+    const id = 1n;
+
+    await expect(facility.connect(borrower).topUpCash(id, 100n)).to.be.revertedWithCustomError(
+      facility,
+      "InvalidState"
+    );
+
+    await treasury.connect(borrower).approve(facility.target, cashAmount);
+    await title.connect(borrower).setApprovalForAll(facility.target, true);
+    await facility.connect(borrower).fundAndEncumber(id, cashAmount / 2n, 42n);
+
+    await expect(facility.connect(banker).topUpCash(id, 100n)).to.be.revertedWithCustomError(
+      facility,
+      "NotBorrower"
+    );
+
+    await expect(facility.connect(borrower).topUpCash(id, 0n)).to.be.revertedWithCustomError(
+      facility,
+      "ZeroAmount"
+    );
+
+    await facility.connect(compliance).applyComplianceHold(id);
+    await expect(facility.connect(borrower).topUpCash(id, 100n)).to.be.revertedWithCustomError(
+      facility,
+      "InvalidState"
+    );
+  });
+
+  it("SoD: banker cannot apply compliance hold; liquidator cannot commence liquidation", async function () {
+    const { networkHelpers } = await hre.network.connect();
+    const { treasury, title, facility, banker, liquidator, borrower, cashAmount } =
+      await networkHelpers.loadFixture(deployAllFixture);
+
+    await facility.connect(banker).createFacility(borrower.address, 0);
+    const id = 1n;
+    await treasury.connect(borrower).approve(facility.target, cashAmount);
+    await title.connect(borrower).setApprovalForAll(facility.target, true);
+    await facility.connect(borrower).fundAndEncumber(id, cashAmount, 42n);
+
+    await expect(
+      facility.connect(banker).applyComplianceHold(id)
+    ).to.be.revertedWithCustomError(facility, "AccessControlUnauthorizedAccount");
+
+    await expect(
+      facility.connect(liquidator).commenceLiquidation(id)
+    ).to.be.revertedWithCustomError(facility, "AccessControlUnauthorizedAccount");
+  });
 });

@@ -6,9 +6,9 @@ import type { TypedContractEvent, TypedDeferredTopicFilter, TypedEventLog, Typed
   
 
   export interface CorporateTreasuryInterface extends Interface {
-    getFunction(nameOrSignature: "COMPLIANCE_ROLE" | "DEFAULT_ADMIN_ROLE" | "GRACE_PERIOD" | "INITIAL_SUPPLY" | "TREASURY_OPERATOR_ROLE" | "addToBlacklist" | "allowance" | "approve" | "balanceOf" | "burn" | "burnFrom" | "decimals" | "freezeAccount" | "frozenUntil" | "getRoleAdmin" | "grantRole" | "hasRole" | "holdCompliance" | "isBlacklisted" | "mint" | "name" | "owner" | "pause" | "pauseForCompliance" | "paused" | "releaseAccount" | "removeFromBlacklist" | "renounceOwnership" | "renounceRole" | "revokeRole" | "supportsInterface" | "symbol" | "totalSupply" | "transfer" | "transferFrom" | "transferOwnership" | "unpause"): FunctionFragment;
+    getFunction(nameOrSignature: "COMPLIANCE_ROLE" | "DEFAULT_ADMIN_ROLE" | "GRACE_PERIOD" | "INITIAL_SUPPLY" | "TREASURY_OPERATOR_ROLE" | "addToBlacklist" | "allowance" | "approve" | "balanceOf" | "burn" | "burnFrom" | "decimals" | "forceTransfer" | "freezeAccount" | "frozenUntil" | "getRoleAdmin" | "grantRole" | "hasRole" | "holdCompliance" | "isBlacklisted" | "mint" | "name" | "owner" | "pause" | "pauseForCompliance" | "paused" | "releaseAccount" | "removeFromBlacklist" | "renounceOwnership" | "renounceRole" | "revokeRole" | "supportsInterface" | "symbol" | "totalSupply" | "transfer" | "transferFrom" | "transferOwnership" | "unpause"): FunctionFragment;
 
-    getEvent(nameOrSignatureOrTopic: "Approval" | "Blacklisted" | "ComplianceHold" | "FundsFrozen" | "FundsReleased" | "MinterConfigured" | "OwnershipTransferred" | "Paused" | "RoleAdminChanged" | "RoleGranted" | "RoleRevoked" | "Transfer" | "Unpaused"): EventFragment;
+    getEvent(nameOrSignatureOrTopic: "Approval" | "Blacklisted" | "ComplianceForceTransfer" | "ComplianceHold" | "FundsFrozen" | "FundsReleased" | "MinterConfigured" | "OwnershipTransferred" | "Paused" | "RoleAdminChanged" | "RoleGranted" | "RoleRevoked" | "Transfer" | "Unpaused"): EventFragment;
 
     encodeFunctionData(functionFragment: 'COMPLIANCE_ROLE', values?: undefined): string;
 encodeFunctionData(functionFragment: 'DEFAULT_ADMIN_ROLE', values?: undefined): string;
@@ -22,6 +22,7 @@ encodeFunctionData(functionFragment: 'balanceOf', values: [AddressLike]): string
 encodeFunctionData(functionFragment: 'burn', values: [BigNumberish]): string;
 encodeFunctionData(functionFragment: 'burnFrom', values: [AddressLike, BigNumberish]): string;
 encodeFunctionData(functionFragment: 'decimals', values?: undefined): string;
+encodeFunctionData(functionFragment: 'forceTransfer', values: [AddressLike, AddressLike, BigNumberish, BytesLike]): string;
 encodeFunctionData(functionFragment: 'freezeAccount', values: [AddressLike, BigNumberish]): string;
 encodeFunctionData(functionFragment: 'frozenUntil', values: [AddressLike]): string;
 encodeFunctionData(functionFragment: 'getRoleAdmin', values: [BytesLike]): string;
@@ -60,6 +61,7 @@ decodeFunctionResult(functionFragment: 'balanceOf', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'burn', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'burnFrom', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'decimals', data: BytesLike): Result;
+decodeFunctionResult(functionFragment: 'forceTransfer', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'freezeAccount', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'frozenUntil', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'getRoleAdmin', data: BytesLike): Result;
@@ -104,6 +106,18 @@ decodeFunctionResult(functionFragment: 'unpause', data: BytesLike): Result;
       export type InputTuple = [account: AddressLike, status: boolean];
       export type OutputTuple = [account: string, status: boolean];
       export interface OutputObject {account: string, status: boolean };
+      export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>
+      export type Filter = TypedDeferredTopicFilter<Event>
+      export type Log = TypedEventLog<Event>
+      export type LogDescription = TypedLogDescription<Event>
+    }
+
+  
+
+    export namespace ComplianceForceTransferEvent {
+      export type InputTuple = [from: AddressLike, to: AddressLike, amount: BigNumberish, reason: BytesLike, officer: AddressLike];
+      export type OutputTuple = [from: string, to: string, amount: bigint, reason: string, officer: string];
+      export interface OutputObject {from: string, to: string, amount: bigint, reason: string, officer: string };
       export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>
       export type Filter = TypedDeferredTopicFilter<Event>
       export type Log = TypedEventLog<Event>
@@ -374,6 +388,14 @@ decodeFunctionResult(functionFragment: 'unpause', data: BytesLike): Result;
     
 
     
+    forceTransfer: TypedContractMethod<
+      [from: AddressLike, to: AddressLike, amount: BigNumberish, reason: BytesLike, ],
+      [void],
+      'nonpayable'
+    >
+    
+
+    
     freezeAccount: TypedContractMethod<
       [account: AddressLike, duration: BigNumberish, ],
       [void],
@@ -636,6 +658,11 @@ getFunction(nameOrSignature: 'decimals'): TypedContractMethod<
       [bigint],
       'view'
     >;
+getFunction(nameOrSignature: 'forceTransfer'): TypedContractMethod<
+      [from: AddressLike, to: AddressLike, amount: BigNumberish, reason: BytesLike, ],
+      [void],
+      'nonpayable'
+    >;
 getFunction(nameOrSignature: 'freezeAccount'): TypedContractMethod<
       [account: AddressLike, duration: BigNumberish, ],
       [void],
@@ -764,6 +791,7 @@ getFunction(nameOrSignature: 'unpause'): TypedContractMethod<
 
     getEvent(key: 'Approval'): TypedContractEvent<ApprovalEvent.InputTuple, ApprovalEvent.OutputTuple, ApprovalEvent.OutputObject>;
 getEvent(key: 'Blacklisted'): TypedContractEvent<BlacklistedEvent.InputTuple, BlacklistedEvent.OutputTuple, BlacklistedEvent.OutputObject>;
+getEvent(key: 'ComplianceForceTransfer'): TypedContractEvent<ComplianceForceTransferEvent.InputTuple, ComplianceForceTransferEvent.OutputTuple, ComplianceForceTransferEvent.OutputObject>;
 getEvent(key: 'ComplianceHold'): TypedContractEvent<ComplianceHoldEvent.InputTuple, ComplianceHoldEvent.OutputTuple, ComplianceHoldEvent.OutputObject>;
 getEvent(key: 'FundsFrozen'): TypedContractEvent<FundsFrozenEvent.InputTuple, FundsFrozenEvent.OutputTuple, FundsFrozenEvent.OutputObject>;
 getEvent(key: 'FundsReleased'): TypedContractEvent<FundsReleasedEvent.InputTuple, FundsReleasedEvent.OutputTuple, FundsReleasedEvent.OutputObject>;
@@ -784,6 +812,10 @@ getEvent(key: 'Unpaused'): TypedContractEvent<UnpausedEvent.InputTuple, Unpaused
 
       'Blacklisted(address,bool)': TypedContractEvent<BlacklistedEvent.InputTuple, BlacklistedEvent.OutputTuple, BlacklistedEvent.OutputObject>;
       Blacklisted: TypedContractEvent<BlacklistedEvent.InputTuple, BlacklistedEvent.OutputTuple, BlacklistedEvent.OutputObject>;
+    
+
+      'ComplianceForceTransfer(address,address,uint256,bytes32,address)': TypedContractEvent<ComplianceForceTransferEvent.InputTuple, ComplianceForceTransferEvent.OutputTuple, ComplianceForceTransferEvent.OutputObject>;
+      ComplianceForceTransfer: TypedContractEvent<ComplianceForceTransferEvent.InputTuple, ComplianceForceTransferEvent.OutputTuple, ComplianceForceTransferEvent.OutputObject>;
     
 
       'ComplianceHold(address,address,uint256)': TypedContractEvent<ComplianceHoldEvent.InputTuple, ComplianceHoldEvent.OutputTuple, ComplianceHoldEvent.OutputObject>;

@@ -13,9 +13,9 @@ export declare namespace CollateralizedFacility {
     }
 
   export interface CollateralizedFacilityInterface extends Interface {
-    getFunction(nameOrSignature: "COMPLIANCE_ROLE" | "DEFAULT_ADMIN_ROLE" | "FACILITY_BANKER_ROLE" | "LIQUIDATION_AGENT_ROLE" | "applyComplianceHold" | "cashToken" | "commenceLiquidation" | "createFacility" | "finalizeLiquidation" | "fundAndEncumber" | "getFacility" | "getFacilityParts" | "getRoleAdmin" | "grantRole" | "hasRole" | "nextFacilityId" | "onERC721Received" | "releaseComplianceHold" | "releaseFacility" | "renounceRole" | "revokeRole" | "supportsInterface" | "titleToken"): FunctionFragment;
+    getFunction(nameOrSignature: "COMPLIANCE_ROLE" | "DEFAULT_ADMIN_ROLE" | "FACILITY_BANKER_ROLE" | "LIQUIDATION_AGENT_ROLE" | "applyComplianceHold" | "cashToken" | "commenceLiquidation" | "createFacility" | "finalizeLiquidation" | "fundAndEncumber" | "getFacility" | "getFacilityParts" | "getRoleAdmin" | "grantRole" | "hasRole" | "nextFacilityId" | "onERC721Received" | "releaseComplianceHold" | "releaseFacility" | "renounceRole" | "revokeRole" | "supportsInterface" | "titleToken" | "topUpCash"): FunctionFragment;
 
-    getEvent(nameOrSignatureOrTopic: "ComplianceHoldApplied" | "ComplianceHoldReleased" | "FacilityCreated" | "FacilityFunded" | "FacilityReleasedNormally" | "LiquidationCommenced" | "LiquidationFinalized" | "RoleAdminChanged" | "RoleGranted" | "RoleRevoked"): EventFragment;
+    getEvent(nameOrSignatureOrTopic: "CashToppedUp" | "ComplianceHoldApplied" | "ComplianceHoldReleased" | "FacilityCreated" | "FacilityFunded" | "FacilityReleasedNormally" | "LiquidationCommenced" | "LiquidationFinalized" | "RoleAdminChanged" | "RoleGranted" | "RoleRevoked"): EventFragment;
 
     encodeFunctionData(functionFragment: 'COMPLIANCE_ROLE', values?: undefined): string;
 encodeFunctionData(functionFragment: 'DEFAULT_ADMIN_ROLE', values?: undefined): string;
@@ -40,6 +40,7 @@ encodeFunctionData(functionFragment: 'renounceRole', values: [BytesLike, Address
 encodeFunctionData(functionFragment: 'revokeRole', values: [BytesLike, AddressLike]): string;
 encodeFunctionData(functionFragment: 'supportsInterface', values: [BytesLike]): string;
 encodeFunctionData(functionFragment: 'titleToken', values?: undefined): string;
+encodeFunctionData(functionFragment: 'topUpCash', values: [BigNumberish, BigNumberish]): string;
 
     decodeFunctionResult(functionFragment: 'COMPLIANCE_ROLE', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'DEFAULT_ADMIN_ROLE', data: BytesLike): Result;
@@ -64,9 +65,22 @@ decodeFunctionResult(functionFragment: 'renounceRole', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'revokeRole', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'supportsInterface', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'titleToken', data: BytesLike): Result;
+decodeFunctionResult(functionFragment: 'topUpCash', data: BytesLike): Result;
   }
 
   
+    export namespace CashToppedUpEvent {
+      export type InputTuple = [facilityId: BigNumberish, borrower: AddressLike, amount: BigNumberish, newLockedCash: BigNumberish];
+      export type OutputTuple = [facilityId: bigint, borrower: string, amount: bigint, newLockedCash: bigint];
+      export interface OutputObject {facilityId: bigint, borrower: string, amount: bigint, newLockedCash: bigint };
+      export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>
+      export type Filter = TypedDeferredTopicFilter<Event>
+      export type Log = TypedEventLog<Event>
+      export type LogDescription = TypedLogDescription<Event>
+    }
+
+  
+
     export namespace ComplianceHoldAppliedEvent {
       export type InputTuple = [facilityId: BigNumberish, actor: AddressLike];
       export type OutputTuple = [facilityId: bigint, actor: string];
@@ -404,6 +418,14 @@ decodeFunctionResult(functionFragment: 'titleToken', data: BytesLike): Result;
     >
     
 
+    
+    topUpCash: TypedContractMethod<
+      [facilityId: BigNumberish, amount: BigNumberish, ],
+      [void],
+      'nonpayable'
+    >
+    
+
 
     getFunction<T extends ContractMethod = ContractMethod>(key: string | FunctionFragment): T;
 
@@ -522,8 +544,14 @@ getFunction(nameOrSignature: 'titleToken'): TypedContractMethod<
       [string],
       'view'
     >;
+getFunction(nameOrSignature: 'topUpCash'): TypedContractMethod<
+      [facilityId: BigNumberish, amount: BigNumberish, ],
+      [void],
+      'nonpayable'
+    >;
 
-    getEvent(key: 'ComplianceHoldApplied'): TypedContractEvent<ComplianceHoldAppliedEvent.InputTuple, ComplianceHoldAppliedEvent.OutputTuple, ComplianceHoldAppliedEvent.OutputObject>;
+    getEvent(key: 'CashToppedUp'): TypedContractEvent<CashToppedUpEvent.InputTuple, CashToppedUpEvent.OutputTuple, CashToppedUpEvent.OutputObject>;
+getEvent(key: 'ComplianceHoldApplied'): TypedContractEvent<ComplianceHoldAppliedEvent.InputTuple, ComplianceHoldAppliedEvent.OutputTuple, ComplianceHoldAppliedEvent.OutputObject>;
 getEvent(key: 'ComplianceHoldReleased'): TypedContractEvent<ComplianceHoldReleasedEvent.InputTuple, ComplianceHoldReleasedEvent.OutputTuple, ComplianceHoldReleasedEvent.OutputObject>;
 getEvent(key: 'FacilityCreated'): TypedContractEvent<FacilityCreatedEvent.InputTuple, FacilityCreatedEvent.OutputTuple, FacilityCreatedEvent.OutputObject>;
 getEvent(key: 'FacilityFunded'): TypedContractEvent<FacilityFundedEvent.InputTuple, FacilityFundedEvent.OutputTuple, FacilityFundedEvent.OutputObject>;
@@ -536,6 +564,10 @@ getEvent(key: 'RoleRevoked'): TypedContractEvent<RoleRevokedEvent.InputTuple, Ro
 
     filters: {
       
+      'CashToppedUp(uint256,address,uint256,uint256)': TypedContractEvent<CashToppedUpEvent.InputTuple, CashToppedUpEvent.OutputTuple, CashToppedUpEvent.OutputObject>;
+      CashToppedUp: TypedContractEvent<CashToppedUpEvent.InputTuple, CashToppedUpEvent.OutputTuple, CashToppedUpEvent.OutputObject>;
+    
+
       'ComplianceHoldApplied(uint256,address)': TypedContractEvent<ComplianceHoldAppliedEvent.InputTuple, ComplianceHoldAppliedEvent.OutputTuple, ComplianceHoldAppliedEvent.OutputObject>;
       ComplianceHoldApplied: TypedContractEvent<ComplianceHoldAppliedEvent.InputTuple, ComplianceHoldAppliedEvent.OutputTuple, ComplianceHoldAppliedEvent.OutputObject>;
     

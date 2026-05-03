@@ -88,6 +88,9 @@ describe("TitleTokenization", function () {
       deployTitleFixture
     );
 
+    const TRANSFER_AGENT_ROLE = await title.TRANSFER_AGENT_ROLE();
+    await title.connect(owner).grantRole(TRANSFER_AGENT_ROLE, seller.address);
+
     await title.connect(complianceOfficer).mintTitle(
       seller.address,
       1,
@@ -102,5 +105,57 @@ describe("TitleTokenization", function () {
     await expect(
       title.connect(seller).safeTransferTitle(seller.address, buyer.address, 1)
     ).to.be.revertedWithCustomError(title, "EncumberedTitle");
+  });
+
+  it("should require TRANSFER_AGENT_ROLE for safeTransferTitle", async function () {
+    const { networkHelpers } = await hre.network.connect();
+    const { title, complianceOfficer, buyer, seller } = await networkHelpers.loadFixture(
+      deployTitleFixture
+    );
+
+    await title.connect(complianceOfficer).mintTitle(
+      seller.address,
+      1,
+      "https://jpmc.title/1",
+      "0x1234567890123456789012345678901234567890",
+      500000,
+      "NY"
+    );
+
+    await expect(
+      title.connect(seller).safeTransferTitle(seller.address, buyer.address, 1)
+    ).to.be.revertedWithCustomError(title, "AccessControlUnauthorizedAccount");
+  });
+
+  it("should let compliance update tokenURI", async function () {
+    const { networkHelpers } = await hre.network.connect();
+    const { title, owner, complianceOfficer, unauthorized } = await networkHelpers.loadFixture(
+      deployTitleFixture
+    );
+
+    await title.connect(complianceOfficer).mintTitle(
+      owner.address,
+      1,
+      "https://jpmc.title/1",
+      "0x1234567890123456789012345678901234567890",
+      500000,
+      "NY"
+    );
+
+    await expect(
+      title.connect(complianceOfficer).updateTokenURI(1, "https://jpmc.title/1?v=2")
+    )
+      .to.emit(title, "TokenURIUpdated")
+      .withArgs(1, "https://jpmc.title/1?v=2", complianceOfficer.address);
+
+    expect(await title.tokenURI(1)).to.equal("https://jpmc.title/1?v=2");
+
+    await expect(
+      title.connect(unauthorized).updateTokenURI(1, "https://hijack")
+    ).to.be.revertedWithCustomError(title, "AccessControlUnauthorizedAccount");
+
+    await expect(
+      title.connect(complianceOfficer).updateTokenURI(99, "https://nope")
+    ).to.be.revertedWithCustomError(title, "TitleDoesNotExist");
   });
 });

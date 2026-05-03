@@ -49,6 +49,12 @@ contract TradeFinance is ERC1155, ERC1155Supply, ERC1155Burnable, AccessControl,
         uint256 amount
     );
     event SettlementBlocked(address indexed from, address indexed to);
+    event InvoiceDueDateExtended(
+        uint256 indexed invoiceId,
+        uint256 oldDueDate,
+        uint256 newDueDate,
+        address indexed by
+    );
 
     error InvalidAmount(uint256 amount);
     error InvoiceAlreadySettled(uint256 invoiceId);
@@ -57,6 +63,8 @@ contract TradeFinance is ERC1155, ERC1155Supply, ERC1155Burnable, AccessControl,
     error InvalidParty(address party);
     error InvoiceNotFound(uint256 invoiceId);
     error PartialSettlementLimit(uint256 remaining, uint256 requested);
+    error DueDateNotInFuture(uint256 newDueDate, uint256 nowTs);
+    error DueDateNotAnExtension(uint256 oldDueDate, uint256 newDueDate);
 
     constructor(address initialOwner)
         ERC1155("https://jpmc-trade-finance.internal/offchain/invoice/{id}")
@@ -204,6 +212,57 @@ contract TradeFinance is ERC1155, ERC1155Supply, ERC1155Burnable, AccessControl,
         returns (Invoice memory)
     {
         return _invoices[invoiceId];
+    }
+
+    /// @notice Flat-tuple alternative for RPC clients that cannot decode Solidity struct returns (e.g. Web3j).
+    function getInvoiceParts(uint256 invoiceId)
+        public
+        view
+        returns (
+            address receivableParty,
+            address payableParty,
+            uint256 amount,
+            uint256 dueDate,
+            bool settled,
+            uint256 currentSupply,
+            string memory invoiceReference
+        )
+    {
+        Invoice memory inv = _invoices[invoiceId];
+        return (
+            inv.receivableParty,
+            inv.payableParty,
+            inv.amount,
+            inv.dueDate,
+            inv.settled,
+            totalSupply(invoiceId),
+            inv.invoiceReference
+        );
+    }
+
+    /// @notice Banker can extend an unsettled invoice's due date further into the future.
+    /// Cannot shrink the existing date and cannot land in the past.
+    function extendDueDate(uint256 invoiceId, uint256 newDueDate)
+        public
+        onlyRole(BANKER_ROLE)
+    {
+        Invoice storage invoice = _invoices[invoiceId];
+        if (invoice.receivableParty == address(0)) {
+            revert InvoiceNotFound(invoiceId);
+        }
+        if (invoice.settled) {
+            revert InvoiceAlreadySettled(invoiceId);
+        }
+        if (newDueDate <= block.timestamp) {
+            revert DueDateNotInFuture(newDueDate, block.timestamp);
+        }
+        if (newDueDate <= invoice.dueDate) {
+            revert DueDateNotAnExtension(invoice.dueDate, newDueDate);
+        }
+
+        uint256 oldDueDate = invoice.dueDate;
+        invoice.dueDate = newDueDate;
+        emit InvoiceDueDateExtended(invoiceId, oldDueDate, newDueDate, _msgSender());
     }
 
     function getPartyInvoices(address party)

@@ -14,6 +14,7 @@ contract CorporateTreasury is ERC20, ERC20Burnable, ERC20Pausable, AccessControl
 
     mapping(address => bool) private _blacklist;
     mapping(address => uint256) private _frozenUntil;
+    bool private _seizureInProgress;
 
     uint256 public constant GRACE_PERIOD = 45 days;
     uint256 public constant INITIAL_SUPPLY = 1_000_000_000 * 10 ** 18;
@@ -23,11 +24,19 @@ contract CorporateTreasury is ERC20, ERC20Burnable, ERC20Pausable, AccessControl
     event FundsReleased(address indexed account);
     event MinterConfigured(address indexed minter, bool indexed allowed);
     event ComplianceHold(address indexed from, address indexed to, uint256 value);
+    event ComplianceForceTransfer(
+        address indexed from,
+        address indexed to,
+        uint256 amount,
+        bytes32 reason,
+        address indexed officer
+    );
 
     error BlacklistedAccount(address account);
     error AccountFrozen(address account, uint256 until);
     error ZeroAmount();
     error AccessDenied(address sender);
+    error InvalidSeizureParticipants();
 
     constructor(address initialOwner)
         ERC20("JPMC Corporate Treasury", "JPMCT")
@@ -51,20 +60,22 @@ contract CorporateTreasury is ERC20, ERC20Burnable, ERC20Pausable, AccessControl
         internal
         override(ERC20, ERC20Pausable)
     {
-        if (from != address(0)) {
-            if (_blacklist[from]) {
-                revert BlacklistedAccount(from);
+        if (!_seizureInProgress) {
+            if (from != address(0)) {
+                if (_blacklist[from]) {
+                    revert BlacklistedAccount(from);
+                }
+                if (_frozenUntil[from] != 0 && block.timestamp < _frozenUntil[from]) {
+                    revert AccountFrozen(from, _frozenUntil[from]);
+                }
             }
-            if (_frozenUntil[from] != 0 && block.timestamp < _frozenUntil[from]) {
-                revert AccountFrozen(from, _frozenUntil[from]);
-            }
-        }
-        if (to != address(0)) {
-            if (_blacklist[to]) {
-                revert BlacklistedAccount(to);
-            }
-            if (_frozenUntil[to] != 0 && block.timestamp < _frozenUntil[to]) {
-                revert AccountFrozen(to, _frozenUntil[to]);
+            if (to != address(0)) {
+                if (_blacklist[to]) {
+                    revert BlacklistedAccount(to);
+                }
+                if (_frozenUntil[to] != 0 && block.timestamp < _frozenUntil[to]) {
+                    revert AccountFrozen(to, _frozenUntil[to]);
+                }
             }
         }
         super._update(from, to, value);
@@ -158,6 +169,33 @@ contract CorporateTreasury is ERC20, ERC20Burnable, ERC20Pausable, AccessControl
         onlyRole(COMPLIANCE_ROLE)
     {
         _pause();
+    }
+
+    /// @notice Compliance-driven seizure: move tokens from a blacklisted/frozen
+    /// account to a recovery destination without the sender's allowance.
+    /// Still respects the contract-wide pause to keep an emergency freeze authoritative.
+    function forceTransfer(
+        address from,
+        address to,
+        uint256 amount,
+        bytes32 reason
+    )
+        public
+        onlyRole(COMPLIANCE_ROLE)
+        whenNotPaused
+    {
+        if (from == address(0) || to == address(0) || from == to) {
+            revert InvalidSeizureParticipants();
+        }
+        if (amount == 0) {
+            revert ZeroAmount();
+        }
+
+        _seizureInProgress = true;
+        _transfer(from, to, amount);
+        _seizureInProgress = false;
+
+        emit ComplianceForceTransfer(from, to, amount, reason, _msgSender());
     }
 
     function supportsInterface(bytes4 interfaceId) public view override(AccessControl) returns (bool) {

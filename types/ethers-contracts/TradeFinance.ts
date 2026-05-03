@@ -13,9 +13,9 @@ export declare namespace TradeFinance {
     }
 
   export interface TradeFinanceInterface extends Interface {
-    getFunction(nameOrSignature: "BANKER_ROLE" | "COMPLIANCE_ROLE" | "DEFAULT_ADMIN_ROLE" | "MAX_INVOICE_AMOUNT" | "SETTLEMENT_AGENT_ROLE" | "balanceOf" | "balanceOfBatch" | "burn" | "burnBatch" | "createInvoice" | "exists" | "factorFullInvoice" | "factorInvoice" | "getInvoice" | "getInvoiceByReference" | "getPartyInvoices" | "getRoleAdmin" | "grantRole" | "hasRole" | "isApprovedForAll" | "owner" | "pauseContract" | "paused" | "renounceOwnership" | "renounceRole" | "revokeRole" | "safeBatchTransferFrom" | "safeTransferFrom" | "setApprovalForAll" | "setURI" | "settleInvoice" | "supplyOf" | "supportsInterface" | "totalSupply()" | "totalSupply(uint256)" | "transferOwnership" | "unpauseContract" | "uri"): FunctionFragment;
+    getFunction(nameOrSignature: "BANKER_ROLE" | "COMPLIANCE_ROLE" | "DEFAULT_ADMIN_ROLE" | "MAX_INVOICE_AMOUNT" | "SETTLEMENT_AGENT_ROLE" | "balanceOf" | "balanceOfBatch" | "burn" | "burnBatch" | "createInvoice" | "exists" | "extendDueDate" | "factorFullInvoice" | "factorInvoice" | "getInvoice" | "getInvoiceByReference" | "getInvoiceParts" | "getPartyInvoices" | "getRoleAdmin" | "grantRole" | "hasRole" | "isApprovedForAll" | "owner" | "pauseContract" | "paused" | "renounceOwnership" | "renounceRole" | "revokeRole" | "safeBatchTransferFrom" | "safeTransferFrom" | "setApprovalForAll" | "setURI" | "settleInvoice" | "supplyOf" | "supportsInterface" | "totalSupply()" | "totalSupply(uint256)" | "transferOwnership" | "unpauseContract" | "uri"): FunctionFragment;
 
-    getEvent(nameOrSignatureOrTopic: "ApprovalForAll" | "InvoiceCreated" | "InvoiceFactored" | "InvoicePartiallySettled" | "InvoiceSettled" | "OwnershipTransferred" | "Paused" | "RoleAdminChanged" | "RoleGranted" | "RoleRevoked" | "SettlementBlocked" | "TransferBatch" | "TransferSingle" | "URI" | "Unpaused"): EventFragment;
+    getEvent(nameOrSignatureOrTopic: "ApprovalForAll" | "InvoiceCreated" | "InvoiceDueDateExtended" | "InvoiceFactored" | "InvoicePartiallySettled" | "InvoiceSettled" | "OwnershipTransferred" | "Paused" | "RoleAdminChanged" | "RoleGranted" | "RoleRevoked" | "SettlementBlocked" | "TransferBatch" | "TransferSingle" | "URI" | "Unpaused"): EventFragment;
 
     encodeFunctionData(functionFragment: 'BANKER_ROLE', values?: undefined): string;
 encodeFunctionData(functionFragment: 'COMPLIANCE_ROLE', values?: undefined): string;
@@ -28,10 +28,12 @@ encodeFunctionData(functionFragment: 'burn', values: [AddressLike, BigNumberish,
 encodeFunctionData(functionFragment: 'burnBatch', values: [AddressLike, BigNumberish[], BigNumberish[]]): string;
 encodeFunctionData(functionFragment: 'createInvoice', values: [AddressLike, AddressLike, BigNumberish, BigNumberish, string, BigNumberish]): string;
 encodeFunctionData(functionFragment: 'exists', values: [BigNumberish]): string;
+encodeFunctionData(functionFragment: 'extendDueDate', values: [BigNumberish, BigNumberish]): string;
 encodeFunctionData(functionFragment: 'factorFullInvoice', values: [BigNumberish, AddressLike]): string;
 encodeFunctionData(functionFragment: 'factorInvoice', values: [BigNumberish, AddressLike, BigNumberish]): string;
 encodeFunctionData(functionFragment: 'getInvoice', values: [BigNumberish]): string;
 encodeFunctionData(functionFragment: 'getInvoiceByReference', values: [string]): string;
+encodeFunctionData(functionFragment: 'getInvoiceParts', values: [BigNumberish]): string;
 encodeFunctionData(functionFragment: 'getPartyInvoices', values: [AddressLike]): string;
 encodeFunctionData(functionFragment: 'getRoleAdmin', values: [BytesLike]): string;
 encodeFunctionData(functionFragment: 'grantRole', values: [BytesLike, AddressLike]): string;
@@ -67,10 +69,12 @@ decodeFunctionResult(functionFragment: 'burn', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'burnBatch', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'createInvoice', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'exists', data: BytesLike): Result;
+decodeFunctionResult(functionFragment: 'extendDueDate', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'factorFullInvoice', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'factorInvoice', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'getInvoice', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'getInvoiceByReference', data: BytesLike): Result;
+decodeFunctionResult(functionFragment: 'getInvoiceParts', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'getPartyInvoices', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'getRoleAdmin', data: BytesLike): Result;
 decodeFunctionResult(functionFragment: 'grantRole', data: BytesLike): Result;
@@ -113,6 +117,18 @@ decodeFunctionResult(functionFragment: 'uri', data: BytesLike): Result;
       export type InputTuple = [invoiceId: BigNumberish, receivableParty: AddressLike, payableParty: AddressLike, amount: BigNumberish, dueDate: BigNumberish, invoiceRef: string];
       export type OutputTuple = [invoiceId: bigint, receivableParty: string, payableParty: string, amount: bigint, dueDate: bigint, invoiceRef: string];
       export interface OutputObject {invoiceId: bigint, receivableParty: string, payableParty: string, amount: bigint, dueDate: bigint, invoiceRef: string };
+      export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>
+      export type Filter = TypedDeferredTopicFilter<Event>
+      export type Log = TypedEventLog<Event>
+      export type LogDescription = TypedLogDescription<Event>
+    }
+
+  
+
+    export namespace InvoiceDueDateExtendedEvent {
+      export type InputTuple = [invoiceId: BigNumberish, oldDueDate: BigNumberish, newDueDate: BigNumberish, by: AddressLike];
+      export type OutputTuple = [invoiceId: bigint, oldDueDate: bigint, newDueDate: bigint, by: string];
+      export interface OutputObject {invoiceId: bigint, oldDueDate: bigint, newDueDate: bigint, by: string };
       export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>
       export type Filter = TypedDeferredTopicFilter<Event>
       export type Log = TypedEventLog<Event>
@@ -399,6 +415,14 @@ decodeFunctionResult(functionFragment: 'uri', data: BytesLike): Result;
     
 
     
+    extendDueDate: TypedContractMethod<
+      [invoiceId: BigNumberish, newDueDate: BigNumberish, ],
+      [void],
+      'nonpayable'
+    >
+    
+
+    
     factorFullInvoice: TypedContractMethod<
       [invoiceId: BigNumberish, factor: AddressLike, ],
       [void],
@@ -426,6 +450,14 @@ decodeFunctionResult(functionFragment: 'uri', data: BytesLike): Result;
     getInvoiceByReference: TypedContractMethod<
       [invoiceRef: string, ],
       [bigint],
+      'view'
+    >
+    
+
+    
+    getInvoiceParts: TypedContractMethod<
+      [invoiceId: BigNumberish, ],
+      [[string, string, bigint, bigint, boolean, bigint, string] & {receivableParty: string, payableParty: string, amount: bigint, dueDate: bigint, settled: boolean, currentSupply: bigint, invoiceReference: string }],
       'view'
     >
     
@@ -672,6 +704,11 @@ getFunction(nameOrSignature: 'exists'): TypedContractMethod<
       [boolean],
       'view'
     >;
+getFunction(nameOrSignature: 'extendDueDate'): TypedContractMethod<
+      [invoiceId: BigNumberish, newDueDate: BigNumberish, ],
+      [void],
+      'nonpayable'
+    >;
 getFunction(nameOrSignature: 'factorFullInvoice'): TypedContractMethod<
       [invoiceId: BigNumberish, factor: AddressLike, ],
       [void],
@@ -690,6 +727,11 @@ getFunction(nameOrSignature: 'getInvoice'): TypedContractMethod<
 getFunction(nameOrSignature: 'getInvoiceByReference'): TypedContractMethod<
       [invoiceRef: string, ],
       [bigint],
+      'view'
+    >;
+getFunction(nameOrSignature: 'getInvoiceParts'): TypedContractMethod<
+      [invoiceId: BigNumberish, ],
+      [[string, string, bigint, bigint, boolean, bigint, string] & {receivableParty: string, payableParty: string, amount: bigint, dueDate: bigint, settled: boolean, currentSupply: bigint, invoiceReference: string }],
       'view'
     >;
 getFunction(nameOrSignature: 'getPartyInvoices'): TypedContractMethod<
@@ -810,6 +852,7 @@ getFunction(nameOrSignature: 'uri'): TypedContractMethod<
 
     getEvent(key: 'ApprovalForAll'): TypedContractEvent<ApprovalForAllEvent.InputTuple, ApprovalForAllEvent.OutputTuple, ApprovalForAllEvent.OutputObject>;
 getEvent(key: 'InvoiceCreated'): TypedContractEvent<InvoiceCreatedEvent.InputTuple, InvoiceCreatedEvent.OutputTuple, InvoiceCreatedEvent.OutputObject>;
+getEvent(key: 'InvoiceDueDateExtended'): TypedContractEvent<InvoiceDueDateExtendedEvent.InputTuple, InvoiceDueDateExtendedEvent.OutputTuple, InvoiceDueDateExtendedEvent.OutputObject>;
 getEvent(key: 'InvoiceFactored'): TypedContractEvent<InvoiceFactoredEvent.InputTuple, InvoiceFactoredEvent.OutputTuple, InvoiceFactoredEvent.OutputObject>;
 getEvent(key: 'InvoicePartiallySettled'): TypedContractEvent<InvoicePartiallySettledEvent.InputTuple, InvoicePartiallySettledEvent.OutputTuple, InvoicePartiallySettledEvent.OutputObject>;
 getEvent(key: 'InvoiceSettled'): TypedContractEvent<InvoiceSettledEvent.InputTuple, InvoiceSettledEvent.OutputTuple, InvoiceSettledEvent.OutputObject>;
@@ -832,6 +875,10 @@ getEvent(key: 'Unpaused'): TypedContractEvent<UnpausedEvent.InputTuple, Unpaused
 
       'InvoiceCreated(uint256,address,address,uint256,uint256,string)': TypedContractEvent<InvoiceCreatedEvent.InputTuple, InvoiceCreatedEvent.OutputTuple, InvoiceCreatedEvent.OutputObject>;
       InvoiceCreated: TypedContractEvent<InvoiceCreatedEvent.InputTuple, InvoiceCreatedEvent.OutputTuple, InvoiceCreatedEvent.OutputObject>;
+    
+
+      'InvoiceDueDateExtended(uint256,uint256,uint256,address)': TypedContractEvent<InvoiceDueDateExtendedEvent.InputTuple, InvoiceDueDateExtendedEvent.OutputTuple, InvoiceDueDateExtendedEvent.OutputObject>;
+      InvoiceDueDateExtended: TypedContractEvent<InvoiceDueDateExtendedEvent.InputTuple, InvoiceDueDateExtendedEvent.OutputTuple, InvoiceDueDateExtendedEvent.OutputObject>;
     
 
       'InvoiceFactored(uint256,address,uint256)': TypedContractEvent<InvoiceFactoredEvent.InputTuple, InvoiceFactoredEvent.OutputTuple, InvoiceFactoredEvent.OutputObject>;

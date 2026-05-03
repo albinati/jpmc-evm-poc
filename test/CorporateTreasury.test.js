@@ -118,4 +118,88 @@ describe("CorporateTreasury", function () {
 
     expect(await treasury.balanceOf(user1.address)).to.equal(500);
   });
+
+  it("forceTransfer seizes from a blacklisted account and emits the seizure event", async function () {
+    const { networkHelpers } = await hre.network.connect();
+    const { treasury, owner, user1, user2 } = await networkHelpers.loadFixture(deployTreasuryFixture);
+
+    await treasury.transfer(user1.address, 5000);
+    await treasury.connect(owner).addToBlacklist(user1.address);
+
+    const reason = "0x" + Buffer.from("AML-2025-001".padEnd(32, "\0"), "utf8").toString("hex");
+
+    await expect(
+      treasury.connect(owner).forceTransfer(user1.address, user2.address, 1500, reason)
+    )
+      .to.emit(treasury, "ComplianceForceTransfer")
+      .withArgs(user1.address, user2.address, 1500, reason, owner.address);
+
+    expect(await treasury.balanceOf(user1.address)).to.equal(3500);
+    expect(await treasury.balanceOf(user2.address)).to.equal(1500);
+  });
+
+  it("forceTransfer seizes from a frozen account", async function () {
+    const { networkHelpers } = await hre.network.connect();
+    const { treasury, owner, user1, user2 } = await networkHelpers.loadFixture(deployTreasuryFixture);
+
+    await treasury.transfer(user1.address, 5000);
+    await treasury.connect(owner).freezeAccount(user1.address, 30 * 24 * 60 * 60);
+
+    await treasury.connect(owner).forceTransfer(user1.address, user2.address, 2000, "0x" + "00".repeat(32));
+    expect(await treasury.balanceOf(user2.address)).to.equal(2000);
+  });
+
+  it("forceTransfer reverts when paused", async function () {
+    const { networkHelpers } = await hre.network.connect();
+    const { treasury, owner, user1, user2 } = await networkHelpers.loadFixture(deployTreasuryFixture);
+
+    await treasury.transfer(user1.address, 5000);
+    await treasury.connect(owner).pause();
+
+    await expect(
+      treasury.connect(owner).forceTransfer(user1.address, user2.address, 1000, "0x" + "00".repeat(32))
+    ).to.be.revertedWithCustomError(treasury, "EnforcedPause");
+  });
+
+  it("forceTransfer requires COMPLIANCE_ROLE", async function () {
+    const { networkHelpers } = await hre.network.connect();
+    const { treasury, owner, user1, user2 } = await networkHelpers.loadFixture(deployTreasuryFixture);
+
+    await treasury.transfer(user1.address, 5000);
+
+    await expect(
+      treasury.connect(user2).forceTransfer(user1.address, user2.address, 1000, "0x" + "00".repeat(32))
+    ).to.be.revertedWithCustomError(treasury, "AccessControlUnauthorizedAccount");
+  });
+
+  it("forceTransfer rejects zero address and self-seizure", async function () {
+    const { networkHelpers } = await hre.network.connect();
+    const { treasury, owner, user1 } = await networkHelpers.loadFixture(deployTreasuryFixture);
+
+    await treasury.transfer(user1.address, 5000);
+
+    await expect(
+      treasury.connect(owner).forceTransfer(user1.address, user1.address, 100, "0x" + "00".repeat(32))
+    ).to.be.revertedWithCustomError(treasury, "InvalidSeizureParticipants");
+
+    const ZERO = "0x" + "00".repeat(20);
+    await expect(
+      treasury.connect(owner).forceTransfer(ZERO, user1.address, 100, "0x" + "00".repeat(32))
+    ).to.be.revertedWithCustomError(treasury, "InvalidSeizureParticipants");
+  });
+
+  it("post-seizure, normal transfer guards still apply", async function () {
+    const { networkHelpers } = await hre.network.connect();
+    const { treasury, owner, user1, user2 } = await networkHelpers.loadFixture(deployTreasuryFixture);
+
+    await treasury.transfer(user1.address, 5000);
+    await treasury.connect(owner).addToBlacklist(user1.address);
+
+    await treasury.connect(owner).forceTransfer(user1.address, user2.address, 1000, "0x" + "00".repeat(32));
+
+    await expect(treasury.connect(user1).transfer(user2.address, 100)).to.be.revertedWithCustomError(
+      treasury,
+      "BlacklistedAccount"
+    );
+  });
 });
