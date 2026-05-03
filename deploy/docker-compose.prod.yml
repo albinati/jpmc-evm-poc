@@ -1,0 +1,45 @@
+# Public-prod overrides for the existing Hetzner host.
+# Usage:
+#   docker compose -f deploy/docker-compose.yml \
+#                  -f deploy/docker-compose.prod.yml \
+#                  --env-file /etc/jpmc-evm-poc/secrets.env \
+#                  up -d --build
+#
+# Differences from dev compose:
+# - No public bindings on chain (RPC) or backend — only the frontend container is reachable,
+#   and only on loopback (127.0.0.1:18080) so the existing host reverse proxy can forward to it.
+# - Three signer keys come from /etc/jpmc-evm-poc/secrets.env (mode 0600), not from compose env.
+# - POC_ALLOW_DEV_DEFAULTS still defaults to true so missing keys fall back to Hardhat #1/#2/#3.
+
+name: jpmc-evm-poc
+
+services:
+  chain:
+    ports: !override []
+    restart: unless-stopped
+
+  deploy:
+    environment:
+      RPC_URL: http://chain:8545
+      DEPLOYMENTS_OUT: /deployments/local.json
+      POC_BANKER_PRIVATE_KEY: ${POC_BANKER_PRIVATE_KEY:-}
+      POC_COMPLIANCE_PRIVATE_KEY: ${POC_COMPLIANCE_PRIVATE_KEY:-}
+      POC_LIQUIDATION_PRIVATE_KEY: ${POC_LIQUIDATION_PRIVATE_KEY:-}
+
+  backend:
+    ports: !override []
+    environment:
+      POC_RPC_URL: http://chain:8545
+      POC_DEPLOYMENTS_FILE: /deployments/local.json
+      POC_BANKER_PRIVATE_KEY: ${POC_BANKER_PRIVATE_KEY:-}
+      POC_COMPLIANCE_PRIVATE_KEY: ${POC_COMPLIANCE_PRIVATE_KEY:-}
+      POC_LIQUIDATION_PRIVATE_KEY: ${POC_LIQUIDATION_PRIVATE_KEY:-}
+      POC_SIGNER_PRIVATE_KEY: ${POC_SIGNER_PRIVATE_KEY:-}
+      POC_ALLOW_DEV_DEFAULTS: ${POC_ALLOW_DEV_DEFAULTS:-true}
+      POC_NEXT_RESET_AT: ${POC_NEXT_RESET_AT:-}
+    restart: unless-stopped
+
+  frontend:
+    ports: !override
+      - "127.0.0.1:18080:80"
+    restart: unless-stopped

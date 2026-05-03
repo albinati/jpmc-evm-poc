@@ -1,0 +1,10 @@
+[Unit]
+Description=6-hour reset of the jpmc-evm-poc public demo
+
+[Timer]
+OnCalendar=*-*-* 00,06,12,18:00:00
+Persistent=true
+Unit=jpmc-evm-poc-reset.service
+
+[Install]
+WantedBy=timers.target

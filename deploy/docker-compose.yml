@@ -1,13 +1,51 @@
-# Optional stack when the JSON-RPC node already runs on the host (e.g. `npx hardhat node`).
-# 1) From repo root: `npx hardhat node`
-# 2) In another shell: `npx hardhat run scripts/deploy.js --network localhost`
-# 3) From deploy/: `docker compose up --build`
+# Full local simulation: Hardhat node + one-shot deploy + Spring Boot + nginx UI.
 #
-# On Linux, replace host.docker.internal with your bridge IP or add:
-#   extra_hosts:
-#     - "host.docker.internal:host-gateway"
+# From repo root:
+#   docker compose -f deploy/docker-compose.yml up --build
+#
+# Then open http://localhost:5173 — API is proxied at /api (nginx → backend).
+# JSON-RPC on http://localhost:8545 (optional: cast send / scripts).
+#
+# Redeploy / reset chain data:
+#   docker compose -f deploy/docker-compose.yml down -v
+
+name: jpmc-evm-poc
 
 services:
+  chain:
+    build:
+      context: ..
+      dockerfile: deploy/chain.Dockerfile
+    image: jpmc-evm-poc-chain:latest
+    ports:
+      - "8545:8545"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -sf -X POST -H 'Content-Type: application/json' -d '{\"jsonrpc\":\"2.0\",\"method\":\"eth_chainId\",\"params\":[],\"id\":1}' http://127.0.0.1:8545 | grep -q result",
+        ]
+      interval: 3s
+      timeout: 5s
+      retries: 20
+      start_period: 8s
+
+  # Writes /deployments/local.json for the backend (matches chain the API uses).
+  deploy:
+    image: jpmc-evm-poc-chain:latest
+    depends_on:
+      chain:
+        condition: service_healthy
+    environment:
+      RPC_URL: http://chain:8545
+      DEPLOYMENTS_OUT: /deployments/local.json
+    volumes:
+      - deployments:/deployments
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - npx hardhat run scripts/deploy.js --network localhost
+    restart: "no"
+
   backend:
     build:
       context: ..
@@ -15,14 +53,16 @@ services:
     ports:
       - "8080:8080"
     environment:
-      POC_RPC_URL: http://host.docker.internal:8545
-      POC_CHAIN_ID: "31337"
+      POC_RPC_URL: http://chain:8545
       POC_DEPLOYMENTS_FILE: /deployments/local.json
       POC_SIGNER_PRIVATE_KEY: ${POC_SIGNER_PRIVATE_KEY:-0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80}
     volumes:
-      - ../deployments:/deployments:ro
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+      - deployments:/deployments:ro
+    depends_on:
+      chain:
+        condition: service_healthy
+      deploy:
+        condition: service_completed_successfully
 
   frontend:
     build:
@@ -32,3 +72,6 @@ services:
       - "5173:80"
     depends_on:
       - backend
+
+volumes:
+  deployments:

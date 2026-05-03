@@ -1,0 +1,20 @@
+# Drop into the existing Caddyfile on the host (replace demo.example.com with your domain).
+#
+# Requires the caddy-ratelimit plugin:
+#   xcaddy build --with github.com/mholt/caddy-ratelimit
+# If your Caddy lacks the plugin, use deploy/reverse-proxy/nginx.conf.snippet instead, or
+# delete the rate_limit block — the demo still works, just without per-IP throttling.
+
+demo.example.com {
+    encode zstd gzip
+    reverse_proxy 127.0.0.1:18080
+
+    @writes method POST
+    rate_limit @writes {
+        zone demo_writes {
+            key {remote_host}
+            events 30
+            window 1m
+        }
+    }
+}

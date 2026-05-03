@@ -1,0 +1,21 @@
+# Append to deploy/docker-compose.prod.yml's `frontend` service if your host runs Traefik
+# (instead of Caddy/nginx). Assumes Traefik is configured for automatic Let's Encrypt with
+# the resolver name "le".
+#
+# services:
+#   frontend:
+#     networks:
+#       - traefik_proxy
+#     labels:
+labels:
+  - "traefik.enable=true"
+  - "traefik.http.routers.jpmc-poc.rule=Host(`demo.example.com`)"
+  - "traefik.http.routers.jpmc-poc.entrypoints=websecure"
+  - "traefik.http.routers.jpmc-poc.tls=true"
+  - "traefik.http.routers.jpmc-poc.tls.certresolver=le"
+  - "traefik.http.services.jpmc-poc.loadbalancer.server.port=80"
+  # Per-IP rate limit on POSTs only.
+  - "traefik.http.middlewares.jpmc-ratelimit.ratelimit.average=30"
+  - "traefik.http.middlewares.jpmc-ratelimit.ratelimit.period=1m"
+  - "traefik.http.middlewares.jpmc-ratelimit.ratelimit.sourcecriterion.ipstrategy.depth=1"
+  - "traefik.http.routers.jpmc-poc.middlewares=jpmc-ratelimit"

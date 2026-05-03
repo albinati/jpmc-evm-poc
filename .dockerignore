@@ -1,0 +1,12 @@
+**/node_modules
+**/target
+.git
+.gitignore
+*.log
+hardhat-node.log
+deployments/local.json
+frontend/dist
+cache
+coverage
+.env
+.env.*

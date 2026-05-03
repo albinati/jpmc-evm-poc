@@ -1,0 +1,11 @@
+[Unit]
+Description=Reset jpmc-evm-poc demo chain (wipe + redeploy + reseed)
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/opt/jpmc-evm-poc/deploy/reset-demo.sh
+Environment=JPMC_EVM_POC_ROOT=/opt/jpmc-evm-poc
+Environment=JPMC_EVM_POC_SECRETS=/etc/jpmc-evm-poc/secrets.env
+Environment=JPMC_EVM_POC_LOG=/var/log/jpmc-evm-poc-reset.log
