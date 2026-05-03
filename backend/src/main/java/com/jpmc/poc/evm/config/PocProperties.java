@@ -7,5 +7,10 @@ public record PocProperties(
     String rpcUrl,
     long chainId,
     String deploymentsFile,
-    String signerPrivateKey
+    String signerPrivateKey,
+    String bankerPrivateKey,
+    String compliancePrivateKey,
+    String liquidationPrivateKey,
+    boolean allowDevDefaults,
+    Long nextResetAt
 ) {}

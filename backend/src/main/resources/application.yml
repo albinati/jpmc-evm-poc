@@ -7,6 +7,11 @@ poc:
   chain-id: ${POC_CHAIN_ID:31337}
   deployments-file: ${POC_DEPLOYMENTS_FILE:../deployments/local.json}
   signer-private-key: ${POC_SIGNER_PRIVATE_KEY:}
+  banker-private-key: ${POC_BANKER_PRIVATE_KEY:}
+  compliance-private-key: ${POC_COMPLIANCE_PRIVATE_KEY:}
+  liquidation-private-key: ${POC_LIQUIDATION_PRIVATE_KEY:}
+  allow-dev-defaults: ${POC_ALLOW_DEV_DEFAULTS:true}
+  next-reset-at: ${POC_NEXT_RESET_AT:#{null}}
 
 management:
   endpoints:

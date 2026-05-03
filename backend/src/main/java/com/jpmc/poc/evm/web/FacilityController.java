@@ -4,13 +4,13 @@ import com.jpmc.poc.evm.service.BlockchainReadService;
 import com.jpmc.poc.evm.service.FacilityWorkflowService;
 import com.jpmc.poc.evm.web.dto.FacilityDto;
 import com.jpmc.poc.evm.web.dto.FinalizeLiquidationRequest;
+import com.jpmc.poc.evm.web.dto.TopUpRequest;
+import com.jpmc.poc.evm.web.dto.TxReceiptDto;
 import jakarta.validation.Valid;
-import java.util.Map;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -32,44 +32,30 @@ public class FacilityController {
   }
 
   @PostMapping("/{facilityId}/compliance-hold")
-  public Map<String, String> hold(
-      @PathVariable long facilityId,
-      @RequestHeader(value = "X-Correlation-Id", required = false) String correlationId)
-      throws Exception {
-    String tx =
-        workflowService.applyComplianceHold(facilityId, correlationId != null ? correlationId : "n/a");
-    return Map.of("transactionHash", tx);
+  public TxReceiptDto hold(@PathVariable long facilityId) throws Exception {
+    return workflowService.applyComplianceHold(facilityId);
   }
 
   @PostMapping("/{facilityId}/compliance-release")
-  public Map<String, String> release(
-      @PathVariable long facilityId,
-      @RequestHeader(value = "X-Correlation-Id", required = false) String correlationId)
-      throws Exception {
-    String tx =
-        workflowService.releaseComplianceHold(facilityId, correlationId != null ? correlationId : "n/a");
-    return Map.of("transactionHash", tx);
+  public TxReceiptDto release(@PathVariable long facilityId) throws Exception {
+    return workflowService.releaseComplianceHold(facilityId);
   }
 
   @PostMapping("/{facilityId}/liquidation/commence")
-  public Map<String, String> commenceLiquidation(
-      @PathVariable long facilityId,
-      @RequestHeader(value = "X-Correlation-Id", required = false) String correlationId)
-      throws Exception {
-    String tx =
-        workflowService.commenceLiquidation(facilityId, correlationId != null ? correlationId : "n/a");
-    return Map.of("transactionHash", tx);
+  public TxReceiptDto commenceLiquidation(@PathVariable long facilityId) throws Exception {
+    return workflowService.commenceLiquidation(facilityId);
   }
 
   @PostMapping("/{facilityId}/liquidation/finalize")
-  public Map<String, String> finalize(
-      @PathVariable long facilityId,
-      @Valid @RequestBody FinalizeLiquidationRequest body,
-      @RequestHeader(value = "X-Correlation-Id", required = false) String correlationId)
+  public TxReceiptDto finalizeLiquidation(
+      @PathVariable long facilityId, @Valid @RequestBody FinalizeLiquidationRequest body)
       throws Exception {
-    String tx =
-        workflowService.finalizeLiquidation(
-            facilityId, body.recoveryAddress(), correlationId != null ? correlationId : "n/a");
-    return Map.of("transactionHash", tx);
+    return workflowService.finalizeLiquidation(facilityId, body.recoveryAddress());
+  }
+
+  @PostMapping("/{facilityId}/topup")
+  public TxReceiptDto topUp(@PathVariable long facilityId, @Valid @RequestBody TopUpRequest body)
+      throws Exception {
+    return workflowService.topUpCash(facilityId, body.amount());
   }
 }

@@ -14,7 +14,11 @@ import org.springframework.context.annotation.Configuration;
 public class DeploymentAddresses {
 
   @JsonIgnoreProperties(ignoreUnknown = true)
-  public record DeploymentFile(long chainId, String deployer, Map<String, String> contracts) {}
+  public record DeploymentFile(
+      long chainId,
+      String deployer,
+      Map<String, String> contracts,
+      Map<String, String> signers) {}
 
   @Bean
   DeploymentFile deploymentFile(PocProperties props) throws IOException {
@@ -39,8 +43,19 @@ public class DeploymentAddresses {
 
   @Bean
   ContractAddresses contractAddresses(DeploymentFile file) {
-    return new ContractAddresses(
-        file.contracts().get("CollateralizedFacility"),
-        file.contracts().get("CorporateTreasury"));
+    Map<String, String> c = file.contracts();
+    String facility = require(c, "CollateralizedFacility");
+    String treasury = require(c, "CorporateTreasury");
+    String title = require(c, "TitleTokenization");
+    String trade = require(c, "TradeFinance");
+    return new ContractAddresses(facility, treasury, title, trade);
+  }
+
+  private static String require(Map<String, String> map, String key) {
+    String v = map == null ? null : map.get(key);
+    if (v == null || v.isBlank()) {
+      throw new IllegalStateException("Deployment file missing contract address: " + key);
+    }
+    return v;
   }
 }
